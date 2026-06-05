@@ -1,81 +1,162 @@
 <template>
-  <div class="layout">
-    <!-- Catálogo -->
-    <main class="catalog">
-      <h1>🛍️ E-commerce</h1>
-      <div class="product-grid">
-        <ProductCard
-          v-for="product in products"
-          :key="product.id"
-          :product="product"
-          @add-to-cart="addToCart"
-        />
-      </div>
-    </main>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
 
-    <!-- Carrinho -->
-    <aside class="cart-panel">
-      <h2>🛒 Carrinho</h2>
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+      <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">🛍️ E-commerce</h1>
+      <Button
+        :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
+        rounded
+        text
+        severity="secondary"
+        :aria-label="isDark ? 'Ativar modo claro' : 'Ativar modo escuro'"
+        @click="toggleDark"
+      />
+    </header>
 
-      <p v-if="cart.items.length === 0" class="empty">Carrinho vazio</p>
+    <div class="flex flex-col lg:flex-row gap-6 p-6 max-w-screen-xl mx-auto">
 
-      <table v-else class="cart-table">
-        <thead>
-          <tr>
-            <th>Produto</th>
-            <th>Qtd</th>
-            <th>Subtotal</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in cart.items" :key="item.product.id">
-            <td>{{ item.product.name }}</td>
-            <td class="qty">
-              <button class="btn-qty" @click="removeUnit(item.product.id)">−</button>
-              {{ item.quantity }}
-              <button class="btn-qty" @click="addToCart(item.product)">+</button>
-            </td>
-            <td>R$ {{ (item.product.price * item.quantity).toFixed(2) }}</td>
-            <td>
-              <button class="btn-remove" @click="removeItem(item.product.id)" title="Remover">✕</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Catálogo de produtos -->
+      <main class="flex-1">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <ProductCard
+            v-for="product in products"
+            :key="product.id"
+            :product="product"
+            @add-to-cart="addToCart"
+          />
+        </div>
+      </main>
 
-      <div class="cart-totals">
-        <p>Total de unidades: <strong>{{ totalItems }}</strong></p>
-        <p class="final-price">Valor final: <strong>R$ {{ finalPrice }}</strong></p>
-      </div>
-    </aside>
+      <!-- Painel do carrinho -->
+      <aside class="w-full lg:w-80 xl:w-96 shrink-0">
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-5 sticky top-24">
+
+          <!-- Cabeçalho do carrinho -->
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">🛒 Carrinho</h2>
+            <Button
+              v-if="cart.items.length > 0"
+              label="Limpar"
+              icon="pi pi-trash"
+              severity="danger"
+              size="small"
+              text
+              @click="confirmClear"
+            />
+          </div>
+
+          <!-- Lista de itens com DataView -->
+          <DataView :value="cart.items" data-key="product.id">
+            <template #list="slotProps">
+              <div class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
+                <div
+                  v-for="item in (slotProps.items as CartItem[])"
+                  :key="item.product.id"
+                  class="flex items-center gap-3 py-3"
+                >
+                  <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-sm text-gray-800 dark:text-gray-100 truncate">
+                      {{ item.product.name }}
+                    </p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500">
+                      R$ {{ item.product.price.toFixed(2) }} / un
+                    </p>
+                  </div>
+
+                  <InputNumber
+                    :model-value="item.quantity"
+                    :min="1"
+                    :max="99"
+                    show-buttons
+                    button-layout="horizontal"
+                    :step="1"
+                    :input-style="{ width: '2.5rem', textAlign: 'center', padding: '0.25rem' }"
+                    @update:model-value="(val) => setQty(item.product.id, val)"
+                  />
+
+                  <span class="text-sm font-bold text-green-600 dark:text-green-400 w-20 text-right shrink-0">
+                    R$ {{ (item.product.price * item.quantity).toFixed(2) }}
+                  </span>
+
+                  <Button
+                    icon="pi pi-times"
+                    text
+                    rounded
+                    severity="danger"
+                    size="small"
+                    @click="removeItem(item.product.id)"
+                  />
+                </div>
+              </div>
+            </template>
+
+            <!-- Empty state com Card do PrimeVue -->
+            <template #empty>
+              <Card class="text-center border border-dashed border-gray-200 dark:border-gray-700 shadow-none bg-transparent">
+                <template #content>
+                  <div class="flex flex-col items-center gap-2 py-4">
+                    <i class="pi pi-shopping-cart text-4xl text-gray-300 dark:text-gray-600" />
+                    <p class="font-semibold text-gray-400 dark:text-gray-500">Carrinho vazio</p>
+                    <p class="text-xs text-gray-300 dark:text-gray-600">Adicione produtos para começar</p>
+                  </div>
+                </template>
+              </Card>
+            </template>
+          </DataView>
+
+          <!-- Totais -->
+          <div
+            v-if="cart.items.length > 0"
+            class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-2"
+          >
+            <div class="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+              <span>Total de unidades</span>
+              <strong class="text-gray-700 dark:text-gray-200">{{ totalItems }}</strong>
+            </div>
+            <div class="flex justify-between text-lg font-extrabold text-gray-800 dark:text-gray-100">
+              <span>Total</span>
+              <span class="text-green-600 dark:text-green-400">R$ {{ finalPrice }}</span>
+            </div>
+          </div>
+
+        </div>
+      </aside>
+    </div>
+
+    <ConfirmDialog />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { Cart } from './models/Cart';
+import Card from 'primevue/card';
+import Button from 'primevue/button';
+import DataView from 'primevue/dataview';
+import InputNumber from 'primevue/inputnumber';
+import ConfirmDialog from 'primevue/confirmdialog';
+import { Cart, type CartItem } from './models/Cart';
 import type { Product } from './models/Product';
 import type { Category } from './models/Category';
 import ProductCard from './components/ProductCard.vue';
 
 export default defineComponent({
   name: 'App',
-
-  components: { ProductCard },
+  components: { ProductCard, Card, Button, DataView, InputNumber, ConfirmDialog },
 
   data() {
     const eletronicos: Category = { id: 1, title: 'Eletrônicos' };
     const perifericos: Category = { id: 2, title: 'Periféricos' };
 
     return {
+      isDark: false,
       cart: new Cart(),
       products: [
-        { id: 1, name: 'Notebook Pro',  price: 4500.00, category: eletronicos },
-        { id: 2, name: 'Mouse Gamer',   price:  250.00, category: perifericos },
-        { id: 3, name: 'Teclado RGB',   price:  380.00, category: perifericos },
-        { id: 4, name: 'Monitor 4K',    price: 2800.00, category: eletronicos },
-        { id: 5, name: 'Headset Pro',   price:  450.00, category: perifericos },
+        { id: 1, name: 'Notebook Pro', price: 4500.00, category: eletronicos },
+        { id: 2, name: 'Mouse Gamer',  price:  250.00, category: perifericos },
+        { id: 3, name: 'Teclado RGB',  price:  380.00, category: perifericos },
+        { id: 4, name: 'Monitor 4K',   price: 2800.00, category: eletronicos },
+        { id: 5, name: 'Headset Pro',  price:  450.00, category: perifericos },
       ] as Product[],
     };
   },
@@ -93,115 +174,28 @@ export default defineComponent({
     addToCart(product: Product): void {
       this.cart.addItem(product);
     },
-    removeUnit(productId: number): void {
-      this.cart.removeUnit(productId);
+    setQty(productId: number, val: number | null): void {
+      this.cart.setQuantity(productId, val ?? 1);
     },
     removeItem(productId: number): void {
       this.cart.removeItem(productId);
     },
+    confirmClear(): void {
+      this.$confirm.require({
+        message: 'Deseja remover todos os itens do carrinho?',
+        header: 'Confirmar limpeza',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Sim, limpar',
+        rejectLabel: 'Cancelar',
+        acceptProps: { severity: 'danger' },
+        rejectProps: { severity: 'secondary', outlined: true },
+        accept: () => this.cart.clear(),
+      });
+    },
+    toggleDark(): void {
+      this.isDark = !this.isDark;
+      document.documentElement.classList.toggle('dark', this.isDark);
+    },
   },
 });
 </script>
-
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; }
-
-.layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-.catalog {
-  flex: 1;
-  padding: 2rem;
-}
-.catalog h1 {
-  margin-bottom: 1.5rem;
-  font-size: 1.8rem;
-  color: #2c3e50;
-}
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.cart-panel {
-  width: 340px;
-  background: #fff;
-  padding: 2rem 1.5rem;
-  box-shadow: -2px 0 10px rgba(0,0,0,0.06);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.cart-panel h2 {
-  font-size: 1.3rem;
-  color: #2c3e50;
-}
-.empty {
-  color: #999;
-  font-style: italic;
-}
-
-.cart-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.88rem;
-}
-.cart-table th {
-  text-align: left;
-  padding: 6px 4px;
-  border-bottom: 2px solid #eee;
-  color: #666;
-  font-weight: 600;
-}
-.cart-table td {
-  padding: 8px 4px;
-  border-bottom: 1px solid #f0f0f0;
-  vertical-align: middle;
-}
-
-.qty {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.btn-qty {
-  width: 24px;
-  height: 24px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #f8f8f8;
-  cursor: pointer;
-  font-size: 0.9rem;
-  line-height: 1;
-}
-.btn-qty:hover { background: #e8e8e8; }
-
-.btn-remove {
-  background: none;
-  border: none;
-  color: #e74c3c;
-  cursor: pointer;
-  font-size: 0.9rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-.btn-remove:hover { background: #fdecea; }
-
-.cart-totals {
-  margin-top: auto;
-  padding-top: 1rem;
-  border-top: 2px solid #eee;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  font-size: 0.95rem;
-}
-.final-price {
-  font-size: 1.1rem;
-  color: #27ae60;
-}
-</style>

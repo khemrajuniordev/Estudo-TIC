@@ -32,6 +32,20 @@ export class Cart {
     if (index !== -1) this.items.splice(index, 1);
   }
 
+  setQuantity(productId: number, quantity: number): void {
+    const index = this.items.findIndex((item) => item.product.id === productId);
+    if (index === -1) return;
+    if (quantity <= 0) {
+      this.items.splice(index, 1);
+    } else {
+      this.items[index].quantity = quantity;
+    }
+  }
+
+  clear(): void {
+    this.items.splice(0, this.items.length);
+  }
+
   getTotalItems(): number {
     return this.items.reduce((acc, item) => acc + item.quantity, 0);
   }
