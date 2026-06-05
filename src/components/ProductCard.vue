@@ -11,12 +11,23 @@
         <p class="text-xl font-extrabold text-green-600 dark:text-green-400 mt-auto">
           R$ {{ product.price.toFixed(2) }}
         </p>
-        <Button
-          label="Adicionar"
-          icon="pi pi-cart-plus"
-          class="w-full"
-          @click="$emit('add-to-cart', product)"
-        />
+        <div class="flex flex-col gap-2">
+          <Button
+            label="Adicionar"
+            icon="pi pi-cart-plus"
+            class="w-full"
+            @click="$emit('add-to-cart', product)"
+          />
+          <Button
+            label="Ver detalhes"
+            icon="pi pi-arrow-right"
+            icon-pos="right"
+            severity="secondary"
+            outlined
+            class="w-full"
+            @click="viewDetail"
+          />
+        </div>
       </div>
     </template>
   </Card>
@@ -41,6 +52,12 @@ export default defineComponent({
 
   emits: {
     'add-to-cart': (product: Product) => !!product,
+  },
+
+  methods: {
+    viewDetail(): void {
+      this.$router.push({ name: 'product-detail', params: { id: String(this.product.id) } });
+    },
   },
 });
 </script>
