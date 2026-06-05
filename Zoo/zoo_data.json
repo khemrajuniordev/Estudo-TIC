@@ -1,0 +1,25 @@
+{
+  "proximo_id": 5,
+  "animais": [
+    {
+      "id": 1,
+      "nome": "Escurinho",
+      "tipo": "Cachorro"
+    },
+    {
+      "id": 2,
+      "nome": "Pam",
+      "tipo": "Gato"
+    },
+    {
+      "id": 3,
+      "nome": "Rockynho",
+      "tipo": "Gato"
+    },
+    {
+      "id": 4,
+      "nome": "Gohan",
+      "tipo": "Gato"
+    }
+  ]
+}
