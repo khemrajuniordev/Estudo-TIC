@@ -10,15 +10,15 @@
       </template>
       <template #end>
         <div class="flex items-center gap-2">
-          <span v-if="currentUser" class="text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
-            <i class="pi pi-user mr-1" />{{ currentUser.username }}
+          <span v-if="authStore.user" class="text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
+            <i class="pi pi-user mr-1" />{{ authStore.user.username }}
           </span>
           <Button
-            v-if="!currentUser"
+            v-if="!authStore.isAuthenticated"
             label="Entrar"
             icon="pi pi-sign-in"
             size="small"
-            @click="showLoginDialog = true"
+            @click="$router.push({ name: 'login' })"
           />
           <Button
             v-else
@@ -47,7 +47,7 @@
         <router-view />
       </main>
 
-      <!-- Sidebar do Carrinho -->
+      <!-- Sidebar do Carrinho (sempre visível) -->
       <aside class="w-full lg:w-80 xl:w-96 shrink-0">
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-5 sticky top-20">
           <div class="flex items-center justify-between mb-4">
@@ -119,14 +119,6 @@
     </div>
 
     <ConfirmDialog />
-
-    <!-- Dialog de login -->
-    <Dialog v-model:visible="showLoginDialog" header="Entrar como" modal class="w-80">
-      <div class="flex flex-col gap-3 pt-2">
-        <Button label="Cliente" icon="pi pi-user" class="w-full" @click="loginAs(Role.CUSTOMER)" />
-        <Button label="Administrador" icon="pi pi-shield" severity="warning" class="w-full" @click="loginAs(Role.ADMIN)" />
-      </div>
-    </Dialog>
   </div>
 </template>
 
@@ -138,36 +130,30 @@ import Card from 'primevue/card';
 import DataView from 'primevue/dataview';
 import InputNumber from 'primevue/inputnumber';
 import ConfirmDialog from 'primevue/confirmdialog';
-import Dialog from 'primevue/dialog';
 import { cartStore } from '../store/cart';
-import { authStore, login, logout, isAuthenticated, Role } from '../store/auth';
 import { themeStore, toggleDark } from '../store/theme';
+import { useAuthStore } from '../stores/auth';
 import type { CartItem } from '../models/Cart';
 
 export default defineComponent({
   name: 'ConsumerLayout',
-  components: { Menubar, Button, Card, DataView, InputNumber, ConfirmDialog, Dialog },
+  components: { Menubar, Button, Card, DataView, InputNumber, ConfirmDialog },
 
-  data() {
-    return {
-      showLoginDialog: false,
-      pendingRoute: '' as string,
-      Role,
-    };
+  setup() {
+    return { authStore: useAuthStore() };
   },
 
   computed: {
     cart() { return cartStore.cart; },
-    currentUser() { return authStore.currentUser; },
     isDark() { return themeStore.isDark; },
     totalItems(): number { return cartStore.cart.getTotalItems(); },
     finalPrice(): string { return cartStore.cart.getFinalPrice().toFixed(2); },
     menuItems() {
       const items: { label: string; icon: string; command: () => void }[] = [
-        { label: 'Início', icon: 'pi pi-home', command: () => this.$router.push('/') },
-        { label: 'Carrinho', icon: 'pi pi-shopping-cart', command: () => this.goToCheckout() },
+        { label: 'Início',    icon: 'pi pi-home',          command: () => this.$router.push('/') },
+        { label: 'Carrinho',  icon: 'pi pi-shopping-cart', command: () => this.goToCheckout() },
       ];
-      if (isAuthenticated() && this.currentUser?.role === Role.ADMIN) {
+      if (this.authStore.isAdmin) {
         items.push({ label: 'Painel Admin', icon: 'pi pi-shield', command: () => this.$router.push('/admin') });
       }
       return items;
@@ -194,28 +180,15 @@ export default defineComponent({
       });
     },
     goToCheckout(): void {
-      if (!isAuthenticated()) {
-        this.pendingRoute = '/cart';
-        this.showLoginDialog = true;
+      if (!this.authStore.isAuthenticated) {
+        this.$router.push({ name: 'login', query: { redirect: '/cart' } });
       } else {
         this.$router.push('/cart');
       }
     },
-    loginAs(role: Role): void {
-      login(role);
-      this.showLoginDialog = false;
-      if (this.pendingRoute) {
-        this.$router.push(this.pendingRoute);
-        this.pendingRoute = '';
-      } else if (role === Role.ADMIN) {
-        this.$router.push('/admin');
-      }
-    },
     doLogout(): void {
-      logout();
-      if (this.$route.meta.requiresAuth || this.$route.path.startsWith('/admin')) {
-        this.$router.push('/');
-      }
+      this.authStore.logout();
+      this.$router.push({ name: 'login' });
     },
     toggleDarkMode(): void { toggleDark(); },
   },

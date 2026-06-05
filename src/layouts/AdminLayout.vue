@@ -40,7 +40,7 @@ import { defineComponent } from 'vue';
 import Button from 'primevue/button';
 import Menu from 'primevue/menu';
 import Breadcrumb from 'primevue/breadcrumb';
-import { authStore } from '../store/auth';
+import { useAuthStore } from '../stores/auth';
 import { themeStore, toggleDark } from '../store/theme';
 
 const breadcrumbMap: Record<string, string> = {
@@ -51,6 +51,10 @@ const breadcrumbMap: Record<string, string> = {
 export default defineComponent({
   name: 'AdminLayout',
   components: { Button, Menu, Breadcrumb },
+
+  setup() {
+    return { authStore: useAuthStore() };
+  },
 
   data() {
     return {
@@ -63,7 +67,7 @@ export default defineComponent({
   },
 
   computed: {
-    currentUser() { return authStore.currentUser; },
+    currentUser() { return this.authStore.user; },
     isDark() { return themeStore.isDark; },
     breadcrumbItems(): { label: string; command?: () => void }[] {
       const routeName = String(this.$route.name ?? '');
