@@ -1,19 +1,22 @@
 import { Router } from 'express';
-import { validateData } from '../middlewares/validateData';
-import { categoryController } from '../controllers/category.controller';
-import {
-  categoryQueryPaginationSchema,
-  categoryParamsSchema,
-  createCategorySchema,
-  updateCategorySchema,
-} from '../schemas/category.schema';
+import db from '../database/index';
+import { CategoryRepository } from '../repositories/CategoryRepository';
+import { CategoryService } from '../services/CategoryService';
+import { CategoryController } from '../controllers/CategoryController';
+import { authMiddleware, authorize } from '../middlewares/auth.middleware';
 
 const router = Router();
+const controller = new CategoryController(
+  new CategoryService(new CategoryRepository(db)),
+);
 
-router.get(   '/',    validateData(categoryQueryPaginationSchema, 'query'),  categoryController.list);
-router.get(   '/:id', validateData(categoryParamsSchema, 'params'),           categoryController.getById);
-router.post(  '/',    validateData(createCategorySchema),                     categoryController.create);
-router.put(   '/:id', validateData(categoryParamsSchema, 'params'), validateData(updateCategorySchema), categoryController.update);
-router.delete('/:id', validateData(categoryParamsSchema, 'params'),           categoryController.delete);
+// Rotas públicas
+router.get('/',    controller.list);
+router.get('/:id', controller.getById);
+
+// Rotas protegidas — exigem autenticação + role admin
+router.post(  '/',    authMiddleware, authorize('admin'), controller.create);
+router.put(   '/:id', authMiddleware, authorize('admin'), controller.update);
+router.delete('/:id', authMiddleware, authorize('admin'), controller.delete);
 
 export default router;

@@ -8,7 +8,12 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcryptjs": "^3.0.3",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
+    "node-sqlite3-wasm": "^0.8.58",
     "zod": "^4.4.3"
   },
   "devDependencies": {
