@@ -1,0 +1,19 @@
+{
+  "name": "mini-api",
+  "version": "1.0.0",
+  "description": "API REST com Express e TypeScript",
+  "scripts": {
+    "dev":   "ts-node server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node":    "^20.14.0",
+    "ts-node":        "^10.9.2",
+    "typescript":     "^5.4.5"
+  }
+}
